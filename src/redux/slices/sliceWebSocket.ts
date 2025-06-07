@@ -1,16 +1,24 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { toast } from 'react-toastify';
-import { WebSocketRoomsState, RoomData } from '../../types/store';
 import { Client } from 'colyseus.js';
-import { setUser } from './sliceUser'; // Импортируем action для обновления пользователя
+import { toast } from 'react-toastify';
 
-const initialState: WebSocketRoomsState = {
+interface WebSocketStatusState {
+  isConnected: boolean;
+  infoRoomId: string | null;
+  chatRoomId: string | null;
+  homePlanetRoomId: string | null;
+  planet2RoomId: string | null;
+  planet3RoomId: string | null;
+  error: string | null;
+}
+
+const initialState: WebSocketStatusState = {
   isConnected: false,
-  infoRoom: null as RoomData | null,
-  chatRoom: null as RoomData | null,
-  homePlanetRoom: null as RoomData | null,
-  planet2Room: null as RoomData | null,
-  planet3Room: null as RoomData | null,
+  infoRoomId: null,
+  chatRoomId: null,
+  homePlanetRoomId: null,
+  planet2RoomId: null,
+  planet3RoomId: null,
   error: null,
 };
 
@@ -18,32 +26,32 @@ const webSocketSlice = createSlice({
   name: 'webSocket',
   initialState,
   reducers: {
-    connectInfoSuccess: (state, action: PayloadAction<RoomData>) => {
-      state.infoRoom = action.payload;
+    connectChatSuccess: (state, action: PayloadAction<string>) => {
+      state.chatRoomId = action.payload;
+      state.isConnected = true;
+      state.error = null;
+      toast.success('Чат connection successful');
+    },
+    connectInfoSuccess: (state, action: PayloadAction<string>) => {
+      state.infoRoomId = action.payload;
       state.isConnected = true;
       state.error = null;
       toast.success('Info connection successful');
     },
-    connectChatSuccess: (state, action: PayloadAction<RoomData>) => {
-      state.chatRoom = action.payload;
-      state.isConnected = true;
-      state.error = null;
-      toast.success('Chat connection successful');
-    },
-    connectHomePlanetSuccess: (state, action: PayloadAction<RoomData>) => {
-      state.homePlanetRoom = action.payload;
+    connectHomePlanetSuccess: (state, action: PayloadAction<string>) => {
+      state.homePlanetRoomId = action.payload;
       state.isConnected = true;
       state.error = null;
       toast.success('HomePlanet connection successful');
     },
-    connectPlanet2Success: (state, action: PayloadAction<RoomData>) => {
-      state.planet2Room = action.payload;
+    connectPlanet2Success: (state, action: PayloadAction<string>) => {
+      state.planet2RoomId = action.payload;
       state.isConnected = true;
       state.error = null;
       toast.success('Planet2 connection successful');
     },
-    connectPlanet3Success: (state, action: PayloadAction<RoomData>) => {
-      state.planet3Room = action.payload;
+    connectPlanet3Success: (state, action: PayloadAction<string>) => {
+      state.planet3RoomId = action.payload;
       state.isConnected = true;
       state.error = null;
       toast.success('Planet3 connection successful');
@@ -55,170 +63,298 @@ const webSocketSlice = createSlice({
     },
     disconnect: (state) => {
       state.isConnected = false;
-      state.chatRoom = null;
-      state.homePlanetRoom = null;
-      state.planet2Room = null;
-      state.planet3Room = null;
+      state.chatRoomId = null;
+      state.infoRoomId = null;
+      state.homePlanetRoomId = null;
+      state.planet2RoomId = null;
+      state.planet3RoomId = null;
       state.error = null;
       toast.info('WebSocket connection lost');
     },
-    connectInfoRoomSuccess: (state, action: PayloadAction<{ roomId: string; name: string }>) => {
-      state.isConnected = true;
-      state.error = null;
-      toast.success('InfoRoom connection successful');
+    disconnectChatRoom: (state) => {
+      state.chatRoomId = null;
+      toast.info('Chat room disconnected');
+    },
+    disconnectInfoRoom: (state) => {
+      state.infoRoomId = null;
+      toast.info('Info room disconnected');
+    },
+    disconnectHomePlanetRoom: (state) => {
+      state.homePlanetRoomId = null;
+      toast.info('HomePlanet room disconnected');
+    },
+    disconnectPlanet2Room: (state) => {
+      state.planet2RoomId = null;
+      toast.info('Planet2 room disconnected');
+    },
+    disconnectPlanet3Room: (state) => {
+      state.planet3RoomId = null;
+      toast.info('Planet3 room disconnected');
     },
   },
 });
 
 export const {
   connectChatSuccess,
+  connectInfoSuccess,
   connectHomePlanetSuccess,
   connectPlanet2Success,
   connectPlanet3Success,
   connectFailure,
   disconnect,
-  connectInfoSuccess,
-  connectInfoRoomSuccess,
+  disconnectChatRoom,
+  disconnectInfoRoom,
+  disconnectHomePlanetRoom,
+  disconnectPlanet2Room,
+  disconnectPlanet3Room,
 } = webSocketSlice.actions;
-export default webSocketSlice;
 
-// Thunks для подключения к разным комнатам
-export const connectToInfoRoom = (endpoint: string, userId: string) => async (dispatch: any) => {
-  try {
-    const client = new Client(endpoint);
-    const room: any = await client.joinOrCreate('InfoRoom', { userId });
-    console.log('Параметры подключения к InfoRoom:', { endpoint, userId });
-    console.log('Ответ от сервера после подключения к InfoRoom:', room);
-    const roomData = { roomId: room.roomId, name: room.name };
-    dispatch(connectInfoRoomSuccess(roomData));
-    // Обновляем isAuth только после успешного входа в комнату
-    if (room) {
-      dispatch(setUser({ isAuth: true }));
-    }
-    room.onLeave(() => {
-      console.log('Disconnected from InfoRoom');
-      dispatch(disconnect());
-      dispatch(setUser({ isAuth: false }));
-    });
-  } catch (error: any) {
-    dispatch(connectFailure(error.message));
-  }
-};
+const endpoint =
+  process.env.NODE_ENV === 'production'
+    ? process.env.NEXT_PUBLIC_WS_URL || 'wss://your-production-url.com'
+    : 'ws://localhost:5000';
 
-export const connectToChatRoom = (endpoint: string, userId: string) => async (dispatch: any) => {
+const colyseusClient = new Client(endpoint);
+
+// --- Переменные для контроля переподключения ---
+const MAX_RECONNECT_ATTEMPTS = 10;
+const BASE_RECONNECT_DELAY = 2000; // 2 секунды
+let chatReconnectAttempts = 0;
+let infoReconnectAttempts = 0;
+let homePlanetReconnectAttempts = 0;
+let planet2ReconnectAttempts = 0;
+let planet3ReconnectAttempts = 0;
+
+// Функции подключения к разным комнатам
+export const connectToChatRoom = (userId: string) => async (dispatch: any) => {
   try {
-    const client = new Client(endpoint);
-    const room = await client.joinOrCreate('chat', { userId });
-    dispatch(connectChatSuccess(room));
+    const room = await colyseusClient.joinOrCreate('chat', { userId });
+    chatReconnectAttempts = 0;
+    dispatch(connectChatSuccess((room as any).id));
     room.onMessage('*', (type: string | number, message: any) => {
-      console.log('ChatRoom message:', type, message);
+      // console.log('ChatRoom message:', type, message);
     });
+    const reconnect = () => {
+      if (chatReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        chatReconnectAttempts++;
+        setTimeout(() => {
+          dispatch(connectToChatRoom(userId));
+        }, BASE_RECONNECT_DELAY * chatReconnectAttempts);
+      } else {
+        dispatch(connectFailure('Не удалось переподключиться к чату.'));
+      }
+    };
     room.onLeave((code) => {
       console.log('Left chat room with code:', code);
-      dispatch(disconnect());
-    });
-  } catch (error: any) {
-    dispatch(connectFailure(error.message));
-  }
-};
-
-export const connectToHomePlanetRoom = (endpoint: string, userId: string) => async (dispatch: any) => {
-  try {
-    const client = new Client(endpoint);
-    const room: any = await client.joinOrCreate('HomePlanet', { userId });
-    const roomData = { roomId: room.roomId, name: room.name }; // Используем временный тип any
-    dispatch(connectHomePlanetSuccess(roomData));
-    room.onMessage('*', (type: string | number, message: any) => {
-      console.log('HomePlanetRoom message:', type, message);
-    });
-    room.onLeave((code: any) => {
-      console.log('Left home planet room with code:', code);
-      dispatch(disconnect());
-    });
-  } catch (error: any) {
-    dispatch(connectFailure(error.message));
-  }
-};
-
-export const connectToPlanet2Room = (endpoint: string, userId: string) => async (dispatch: any) => {
-  try {
-    const client = new Client(endpoint);
-    const room = await client.joinOrCreate('Planet2', { userId });
-    dispatch(connectPlanet2Success(room));
-    room.onMessage('*', (type: string | number, message: any) => {
-      console.log('Planet2Room message:', type, message);
-    });
-    room.onLeave((code) => {
-      console.log('Left planet2 room with code:', code);
-      dispatch(disconnect());
-    });
-  } catch (error: any) {
-    dispatch(connectFailure(error.message));
-  }
-};
-
-export const connectToPlanet3Room = (endpoint: string, userId: string) => async (dispatch: any) => {
-  try {
-    const client = new Client(endpoint);
-    const room = await client.joinOrCreate('Planet3', { userId });
-    dispatch(connectPlanet3Success(room));
-    room.onMessage('*', (type: string | number, message: any) => {
-      console.log('Planet3Room message:', type, message);
-    });
-    room.onLeave((code) => {
-      console.log('Left planet3 room with code:', code);
-      dispatch(disconnect());
-    });
-  } catch (error: any) {
-    dispatch(connectFailure(error.message));
-  }
-};
-
-export const disconnectFromInfoRoom = () => (dispatch: any) => {
-  dispatch(disconnect());
-};
-
-export const reconnectToRooms = (endpoint: string, userId: string) => async (dispatch: any, getState: any) => {
-  const state = getState().webSocket;
-  const roomsToReconnect = [
-    { room: state.infoRoom, connectAction: connectToInfoRoom },
-    { room: state.chatRoom, connectAction: connectToChatRoom },
-    { room: state.homePlanetRoom, connectAction: connectToHomePlanetRoom },
-    { room: state.planet2Room, connectAction: connectToPlanet2Room },
-    { room: state.planet3Room, connectAction: connectToPlanet3Room },
-  ];
-
-  for (const { room, connectAction } of roomsToReconnect) {
-    if (room) {
-      try {
-        await dispatch(connectAction(endpoint, userId));
-        console.log(`Reconnected to room: ${room.name}`);
-      } catch (error) {
-        console.error(`Failed to reconnect to room: ${room.name}`, error);
+      if (code === 1006) {
+        reconnect();
+      } else {
+        dispatch(disconnect());
       }
+    });
+    room.onError?.((code: any, message: any) => {
+      console.warn('Room, onError (chat):', code, message);
+      reconnect();
+    });
+  } catch (error: any) {
+    chatReconnectAttempts++;
+    if (chatReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      setTimeout(() => {
+        dispatch(connectToChatRoom(userId));
+      }, BASE_RECONNECT_DELAY * chatReconnectAttempts);
+    } else {
+      dispatch(connectFailure('Не удалось переподключиться к чату.'));
     }
   }
 };
 
-// Обновляем логику для переподключения через события комнат
-export const initializeWebSocket = (endpoint: string, userId: string) => async (dispatch: any) => {
+export const connectToInfoRoom = (userId: string) => async (dispatch: any) => {
   try {
-    const client = new Client(endpoint);
-    const room = await client.joinOrCreate('InfoRoom', { userId });
-
-    room.onError((code, message) => {
-      console.error(`Room error: ${code}, ${message}`);
-      dispatch(connectFailure(`Room error: ${message}`));
+    const room = await colyseusClient.joinOrCreate('info', { userId });
+    infoReconnectAttempts = 0;
+    dispatch(connectInfoSuccess((room as any).id));
+    // room.onMessage('*', (type: string | number, message: any) => {
+    //   console.log('InfoRoom message:', type, message);
+    // });
+    room.onMessage('heroStateUpdate', (data) => {
+      // обновить локальный state других игроков
     });
-
-    room.onLeave(() => {
-      console.warn('Room connection lost. Attempting to reconnect...');
-      dispatch(reconnectToRooms(endpoint, userId));
+    const reconnect = () => {
+      if (infoReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        infoReconnectAttempts++;
+        setTimeout(() => {
+          dispatch(connectToInfoRoom(userId));
+        }, BASE_RECONNECT_DELAY * infoReconnectAttempts);
+      } else {
+        dispatch(connectFailure('Не удалось переподключиться к infoRoom.'));
+      }
+    };
+    room.onLeave((code: number) => {
+      console.log('Left info room with code:', code);
+      if (code === 1006) {
+        reconnect();
+      } else {
+        dispatch(disconnect());
+      }
     });
-
-    return room;
+    room.onError?.((code: any, message: any) => {
+      console.warn('Room, onError (info):', code, message);
+      reconnect();
+    });
   } catch (error: any) {
-    console.error('Failed to initialize WebSocket:', error);
+    infoReconnectAttempts++;
+    if (infoReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      setTimeout(() => {
+        dispatch(connectToInfoRoom(userId));
+      }, BASE_RECONNECT_DELAY * infoReconnectAttempts);
+    } else {
+      dispatch(connectFailure('Не удалось переподключиться к infoRoom.'));
+    }
+  }
+};
+
+export const connectToHomePlanetRoom = (userId: string) => async (dispatch: any) => {
+  try {
+    const room = await colyseusClient.joinOrCreate('homeplanet', { userId });
+    homePlanetReconnectAttempts = 0;
+    dispatch(connectHomePlanetSuccess((room as any).id));
+    // room.onMessage('*', (type: string | number, message: any) => {
+    //   console.log('HomePlanetRoom message:', type, message);
+    // });
+    room.onMessage('planetPlayers', (players) => {
+      // обновить локальный state всех игроков на планете
+    });
+    const reconnect = () => {
+      if (homePlanetReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        homePlanetReconnectAttempts++;
+        setTimeout(() => {
+          dispatch(connectToHomePlanetRoom(userId));
+        }, BASE_RECONNECT_DELAY * homePlanetReconnectAttempts);
+      } else {
+        dispatch(connectFailure('Не удалось переподключиться к homeplanet.'));
+      }
+    };
+    room.onLeave((code) => {
+      console.log('Left home planet room with code:', code);
+      if (code === 1006) {
+        reconnect();
+      } else {
+        dispatch(disconnect());
+      }
+    });
+    room.onError?.((code: any, message: any) => {
+      console.warn('Room, onError (homeplanet):', code, message);
+      reconnect();
+    });
+  } catch (error: any) {
+    homePlanetReconnectAttempts++;
+    if (homePlanetReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      setTimeout(() => {
+        dispatch(connectToHomePlanetRoom(userId));
+      }, BASE_RECONNECT_DELAY * homePlanetReconnectAttempts);
+    } else {
+      dispatch(connectFailure('Не удалось переподключиться к homeplanet.'));
+    }
+  }
+};
+
+export const connectToPlanet2Room = (userId: string) => async (dispatch: any) => {
+  try {
+    const room = await colyseusClient.joinOrCreate('planet2', { userId });
+    planet2ReconnectAttempts = 0;
+    dispatch(connectPlanet2Success((room as any).id));
+    // room.onMessage('*', (type: string | number, message: any) => {
+    //   console.log('Planet2Room message:', type, message);
+    // });
+    room.onMessage('planetPlayers', (players) => {
+      // обновить локальный state всех игроков на планете
+    });
+    const reconnect = () => {
+      if (planet2ReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        planet2ReconnectAttempts++;
+        setTimeout(() => {
+          dispatch(connectToPlanet2Room(userId));
+        }, BASE_RECONNECT_DELAY * planet2ReconnectAttempts);
+      } else {
+        dispatch(connectFailure('Не удалось переподключиться к planet2.'));
+      }
+    };
+    room.onLeave((code) => {
+      console.log('Left planet2 room with code:', code);
+      if (code === 1006) {
+        reconnect();
+      } else {
+        dispatch(disconnect());
+      }
+    });
+    room.onError?.((code: any, message: any) => {
+      console.warn('Room, onError (planet2):', code, message);
+      reconnect();
+    });
+  } catch (error: any) {
+    planet2ReconnectAttempts++;
+    if (planet2ReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      setTimeout(() => {
+        dispatch(connectToPlanet2Room(userId));
+      }, BASE_RECONNECT_DELAY * planet2ReconnectAttempts);
+    } else {
+      dispatch(connectFailure('Не удалось переподключиться к planet2.'));
+    }
+  }
+};
+
+export const connectToPlanet3Room = (userId: string) => async (dispatch: any) => {
+  try {
+    const room = await colyseusClient.joinOrCreate('planet3', { userId });
+    planet3ReconnectAttempts = 0;
+    dispatch(connectPlanet3Success((room as any).id));
+    // room.onMessage('*', (type: string | number, message: any) => {
+    //   console.log('Planet3Room message:', type, message);
+    // });
+    room.onMessage('planetPlayers', (players) => {
+      // обновить локальный state всех игроков на планете
+    });
+    const reconnect = () => {
+      if (planet3ReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        planet3ReconnectAttempts++;
+        setTimeout(() => {
+          dispatch(connectToPlanet3Room(userId));
+        }, BASE_RECONNECT_DELAY * planet3ReconnectAttempts);
+      } else {
+        dispatch(connectFailure('Не удалось переподключиться к planet3.'));
+      }
+    };
+    room.onLeave((code) => {
+      console.log('Left planet3 room with code:', code);
+      if (code === 1006) {
+        reconnect();
+      } else {
+        dispatch(disconnect());
+      }
+    });
+    room.onError?.((code: any, message: any) => {
+      console.warn('Room, onError (planet3):', code, message);
+      reconnect();
+    });
+  } catch (error: any) {
+    planet3ReconnectAttempts++;
+    if (planet3ReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      setTimeout(() => {
+        dispatch(connectToPlanet3Room(userId));
+      }, BASE_RECONNECT_DELAY * planet3ReconnectAttempts);
+    } else {
+      dispatch(connectFailure('Не удалось переподключиться к planet3.'));
+    }
+  }
+};
+
+export const disconnectFromRoom = (roomName: string) => async (dispatch: any) => {
+  try {
+    dispatch(disconnect());
+  } catch (error: any) {
+    console.error('Error disconnecting from room:', error);
     dispatch(connectFailure(error.message));
   }
 };
+
+export default webSocketSlice;

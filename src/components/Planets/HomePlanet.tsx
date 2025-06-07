@@ -22,8 +22,6 @@ export default function HomePlanet() {
   }
   return (
     <Suspense fallback={null}>
-      <ambientLight color="#beebee" intensity={0.5} />
-      <pointLight color="#f1eec3" intensity={1} position={[-54, 200, 0]} />
       <SkyObject namePlanet={namePlanet} />
       <PlanetaObject namePlanet={namePlanet} />
     </Suspense>

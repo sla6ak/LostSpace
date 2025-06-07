@@ -5,6 +5,7 @@ interface PlanetInfo {
   players: string[];
   SkyTexture: string;
   BGTexture: string;
+  intensity: number;
 }
 
 interface PlanetsState {
@@ -17,18 +18,21 @@ const initialState: PlanetsState = {
     players: [],
     SkyTexture: 'SkyBlue.jpg',
     BGTexture: 'BGice.jpg',
+    intensity: 0.7,
   },
   RedPlanet: {
     radius: 250,
     players: [],
     SkyTexture: 'SkyRed.jpg',
     BGTexture: 'BGstone.jpg',
+    intensity: 0.7,
   },
   IcePlanet: {
     radius: 220,
     players: [],
     SkyTexture: 'Skydym.png',
     BGTexture: 'BGsnow1.jpg',
+    intensity: 0.7,
   },
 };
 
