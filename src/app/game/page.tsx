@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import Hero from '@/components/ThreeComponents/HeroTest';
+import Hero from '@/components/ThreeComponents/Hero';
 import { Debug, Physics } from '@react-three/rapier';
 import HomePlanet from '../../components/Planets/HomePlanet';
 import AuthRoute from '../../components/AuthRoute/AuthRoute';
@@ -19,8 +19,8 @@ export default function Game() {
           <GameUI />
           <Suspense fallback={<LoadingOverlay />}>
             <Canvas>
-              <Physics gravity={[0, 0, 0]}>
-                <Debug />
+              <Physics gravity={[0, 0, 0]} timeStep="vary">
+                {/* <Debug /> */}
                 <HomePlanet />
                 <Hero />
                 <CameraFollower />

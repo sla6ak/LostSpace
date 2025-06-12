@@ -1,13 +1,35 @@
 'use client';
 
-import { RigidBody, RigidBodyApi, CapsuleCollider, BallCollider, Debug } from '@react-three/rapier';
-import React, { useRef, Suspense } from 'react';
+import { RigidBody, RigidBodyApi, BallCollider } from '@react-three/rapier';
+import React, { useRef, Suspense, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useFrame } from '@react-three/fiber';
 import { Group, Vector3, Euler, Quaternion, Matrix4 } from 'three';
 import { useLordKeyboardControls } from '@/hooks/useLordKeyboardControls';
 import { setPosition, setRotation } from '@/redux/slices/sliceStateHero';
 import { useGLTF } from '@react-three/drei';
+import { useGravity } from '@/hooks/useGravity';
+
+// Настройки движения
+// const moveSpeed = 10;
+const impulseStrength = 10; // настройте по ощущению «толчка»
+const rotationSpeed = 3;
+const alignmentSpeed = 5.0; // Регулируемая скорость выравнивания
+
+// В начало файла (снаружи компонента)
+const _pos = new Vector3();
+const _center = new Vector3();
+const _toCenter = new Vector3();
+const _up = new Vector3();
+const _modelQuat = new Quaternion();
+const _q = new Quaternion();
+const _forward = new Vector3();
+const _forwardTangent = new Vector3();
+const _right = new Vector3();
+const _correctedForward = new Vector3();
+const _alignQuat = new Quaternion();
+const _basis = new Matrix4();
+const _moveForce = new Vector3();
 
 const Hero = React.forwardRef<Group>((props, ref) => {
   const model = useGLTF('/models/heroAnimations/format/Walking2.glb');
@@ -18,99 +40,83 @@ const Hero = React.forwardRef<Group>((props, ref) => {
   const planetName = useSelector((state: { heroSlice: any }) => state.heroSlice.planet);
   const planetSettings = useSelector((state: { planetsSlice: any }) => state.planetsSlice[planetName]);
 
-  // Настройки движения
-  const moveSpeed = 50;
-  const rotationSpeed = 3;
+  const planetCenter = useMemo(
+    () => new Vector3(planetSettings.center.x, planetSettings.center.y, planetSettings.center.z),
+    [planetSettings.center.x, planetSettings.center.y, planetSettings.center.z]
+  );
 
-  useFrame(() => {
-    if (!rigidBody.current) return;
-    const rb = rigidBody.current;
-
-    // 1) Текущая позиция и вектор к центру
-    const pos = new Vector3().copy(rb.translation());
-    const center = new Vector3(planetSettings.center.x, planetSettings.center.y, planetSettings.center.z);
-    const toCenter = new Vector3().subVectors(center, pos);
-
-    // 2) Расстояние
-    const distance = toCenter.length();
-
-    // 3) Сам закон 1/r² с «минимальным радиусом» 0.5
-    const gravityStrength = planetSettings.gravityPlanet || 10;
-    const r = Math.max(distance, 0.5);
-    const magnitude = (gravityStrength * rb.mass()) / (r * r);
-
-    // 4) Сама сила (направление + модуль)
-    const gravityForce = toCenter.normalize().multiplyScalar(magnitude);
-    rb.addForce(gravityForce, true);
-
-    // 5) Обнуление вертикальной скорости при контакте
-    if (distance - planetSettings.radius <= 0.5) {
-      const lv = rb.linvel();
-      rb.setLinvel({ x: lv.x, y: 0, z: lv.z }, true);
-    }
+  useGravity(rigidBody, planetSettings, {
+    safeDeltaMax: 1 / 20, // опционально
+    zeroVerticalVelocity: false, // опционально при false враги отскакивают
   });
 
   useFrame((state, delta) => {
+    // 4) Защита от скачков FPS с более гибким ограничением
+    const safeDelta = Math.min(Math.max(delta, 0.001), 1 / 20); // Двойное ограничение
+
     if (!rigidBody.current || !modelGroup.current) return;
     const rb = rigidBody.current;
     const model = modelGroup.current;
 
-    // === Вычисляем локальный up-вектор ===
-    const pos = new Vector3().copy(rb.translation());
-    const center = new Vector3(planetSettings.center.x, planetSettings.center.y, planetSettings.center.z);
-    const toCenter = new Vector3().subVectors(center, pos).normalize();
-    const up = toCenter.clone().negate();
+    // 1) Вычисляем up-вектор относительно центра планеты
+    const p = rb.translation();
+    _pos.set(p.x, p.y, p.z);
+    _center.copy(planetCenter);
+    _toCenter.subVectors(_center, _pos).normalize();
+    _up.copy(_toCenter).negate();
 
-    // === Вращение модели клавишами (вдоль up) ===
-    let modelQuat = model.quaternion.clone();
+    // 2) Плавный поворот модели под ввод пользователя (A/D) с умножением на safeDelta
+    _modelQuat.copy(model.quaternion);
     if (movement.moveLeft || movement.moveRight) {
       const dir = movement.moveLeft ? 1 : -1;
-      const angle = dir * rotationSpeed * delta;
-      const q = new Quaternion().setFromAxisAngle(up, angle);
-      modelQuat.premultiply(q);
+      const rotationAmount = dir * rotationSpeed * safeDelta;
+
+      // Плавный поворот с использованием кватернионов
+      _q.setFromAxisAngle(_up, rotationAmount);
+      _modelQuat.premultiply(_q);
     }
 
-    // === Тангенциальный forward и выравнивание ногами вниз ===
-    // 1) берем локальный forward
-    const forward = new Vector3(0, 0, -1).applyQuaternion(modelQuat);
-    // 2) убираем компоненту вдоль up — получаем касательную проекцию
-    const forwardTangent = forward
-      .clone()
-      .sub(up.clone().multiplyScalar(forward.dot(up)))
+    // 3) Строим касательное направление вперед относительно up
+    _forward.set(0, 0, -1).applyQuaternion(_modelQuat);
+    _forwardTangent
+      .copy(_forward)
+      .sub(_up.clone().multiplyScalar(_forward.dot(_up)))
       .normalize();
-    // 3) на её основе строим нормали basis
-    const right = new Vector3().crossVectors(up, forwardTangent).normalize();
-    const correctedForward = new Vector3().crossVectors(right, up).normalize();
-    // 4) формируем итоговую ориентацию (ногами вниз, forward вдоль correctedForward)
-    const alignQuat = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(right, up, correctedForward));
-    // 5) плавно сливаем с управлением
-    modelQuat = new Quaternion().slerpQuaternions(modelQuat, alignQuat, 0.1);
-    model.quaternion.copy(modelQuat);
 
-    // === Движение по касательной ===
-    const moveDir = new Vector3();
-    if (movement.moveForward) moveDir.add(correctedForward);
-    if (movement.moveBackward) moveDir.sub(correctedForward);
+    // 4) Плавное выравнивание ориентации модели под поверхность
+    _right.crossVectors(_up, _forwardTangent).normalize();
+    _correctedForward.crossVectors(_right, _up).normalize();
+    _basis.makeBasis(_right, _up, _correctedForward);
+    _alignQuat.setFromRotationMatrix(_basis);
 
-    if (moveDir.lengthSq() > 0) {
-      moveDir.normalize().multiplyScalar(moveSpeed);
+    // Добавляем плавность с помощью safeDelta
+    const blendFactor = 1 - Math.exp(-alignmentSpeed * safeDelta);
+    _modelQuat.slerp(_alignQuat, blendFactor);
+
+    model.quaternion.slerp(_modelQuat, 0.2);
+
+    // 5) Применяем импульс для движения (W/S) с safeDelta
+    if (movement.moveForward || movement.moveBackward) {
+      const direction = movement.moveForward ? -1 : 1;
+      _moveForce.copy(_correctedForward).multiplyScalar(impulseStrength * direction);
+
+      rb.applyImpulse(
+        {
+          x: _moveForce.x * safeDelta,
+          y: _moveForce.y * safeDelta,
+          z: _moveForce.z * safeDelta,
+        },
+        true
+      );
     }
 
-    // Применяем скорость целиком, включая Y
-    const lv = rb.linvel();
-    const targetLv = new Vector3(moveDir.x, moveDir.y, moveDir.z);
-    const smoothLv = new Vector3().lerpVectors(lv, targetLv, 0.2);
-
-    if (isFinite(smoothLv.x) && isFinite(smoothLv.y) && isFinite(smoothLv.z)) {
-      rb.setLinvel({ x: smoothLv.x, y: smoothLv.y, z: smoothLv.z }, true);
-    }
-
-    // === Синхронизация Redux ===
-    const newPos = rb.translation();
-    dispatch(setPosition({ x: newPos.x, y: newPos.y, z: newPos.z }));
-    const q = model.quaternion;
-    dispatch(setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }));
+    // 6) Синхронизация состояния в Redux
+    const newP = rb.translation();
+    dispatch(setPosition({ x: newP.x, y: newP.y, z: newP.z }));
+    const cq = model.quaternion;
+    dispatch(setRotation({ x: cq.x, y: cq.y, z: cq.z, w: cq.w }));
   });
+
   return (
     <Suspense fallback={null}>
       <RigidBody
@@ -119,10 +125,10 @@ const Hero = React.forwardRef<Group>((props, ref) => {
         mass={1}
         linearDamping={1.5}
         angularDamping={2}
-        enabledRotations={[true, true, true]}
+        enabledRotations={[false, false, false]}
         position={[
-          55,
-          planetSettings.center.y + planetSettings.radius + 2, // запас по Y
+          planetSettings.center.x,
+          planetSettings.center.y + planetSettings.radius + 1, // запас по Y
           planetSettings.center.z,
         ]}
         type="dynamic"

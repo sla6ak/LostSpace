@@ -14,7 +14,7 @@ const PlanetaObject: React.FC<PlanetaObjectProps> = ({ namePlanet }: any) => {
   const planet = useSelector((state: RootState) => state.planetsSlice[namePlanet]);
   // Безопасный путь для useLoader (если planet нет — подставляем существующую заглушку)
   const texturePath = planet ? `/${planet.BGTexture}` : '/BGice.jpg';
-  const radius = planet?.radius || 200;
+  const radius = planet?.radius - 0.3 || 200;
   const texture = useLoader(TextureLoader, texturePath) as Texture;
   const meshRef = useRef<Mesh>(null);
 
@@ -37,7 +37,7 @@ const PlanetaObject: React.FC<PlanetaObjectProps> = ({ namePlanet }: any) => {
       <RigidBody type="fixed" colliders="ball" position={[0, 0, 0]}>
         {/* Для сложных ландшафтов, зданий, неправильных форм colliders="trimesh" */}
         <mesh ref={meshRef} position={[0, 0, 0]}>
-          <sphereGeometry args={[radius, 24, 24]} />
+          <sphereGeometry args={[radius, 32, 32]} />
           <meshStandardMaterial map={texture} />
         </mesh>
       </RigidBody>
