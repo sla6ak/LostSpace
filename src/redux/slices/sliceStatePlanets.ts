@@ -6,6 +6,8 @@ interface PlanetInfo {
   SkyTexture: string;
   BGTexture: string;
   intensity: number;
+  center: { x: number; y: number; z: number };
+  gravityPlanet: number;
 }
 
 interface PlanetsState {
@@ -19,6 +21,8 @@ const initialState: PlanetsState = {
     SkyTexture: 'SkyBlue.jpg',
     BGTexture: 'BGice.jpg',
     intensity: 0.7,
+    center: { x: 0, y: 0, z: 0 },
+    gravityPlanet: 10,
   },
   RedPlanet: {
     radius: 250,
@@ -26,6 +30,8 @@ const initialState: PlanetsState = {
     SkyTexture: 'SkyRed.jpg',
     BGTexture: 'BGstone.jpg',
     intensity: 0.7,
+    center: { x: 0, y: 0, z: 0 },
+    gravityPlanet: 10,
   },
   IcePlanet: {
     radius: 220,
@@ -33,6 +39,8 @@ const initialState: PlanetsState = {
     SkyTexture: 'Skydym.png',
     BGTexture: 'BGsnow1.jpg',
     intensity: 0.7,
+    center: { x: 0, y: 0, z: 0 },
+    gravityPlanet: 10,
   },
 };
 

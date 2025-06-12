@@ -2,8 +2,8 @@
 
 import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import Hero from '@/components/ThreeComponents/Hero';
-import { Physics } from '@react-three/rapier';
+import Hero from '@/components/ThreeComponents/HeroTest';
+import { Debug, Physics } from '@react-three/rapier';
 import HomePlanet from '../../components/Planets/HomePlanet';
 import AuthRoute from '../../components/AuthRoute/AuthRoute';
 import WebSocketManager from '@/components/WebSocketManager/WebSocketManager';
@@ -20,6 +20,7 @@ export default function Game() {
           <Suspense fallback={<LoadingOverlay />}>
             <Canvas>
               <Physics gravity={[0, 0, 0]}>
+                <Debug />
                 <HomePlanet />
                 <Hero />
                 <CameraFollower />

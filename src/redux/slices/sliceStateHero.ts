@@ -4,7 +4,7 @@ import { HeroState, Robot } from '../../types/store';
 const initialState: HeroState = {
   nickname: '',
   position: { x: 0, y: 0, z: 0 },
-  rotation: { x: 0, y: 0, z: 0 },
+  rotation: { x: 0, y: 0, z: 0, w: 0 },
   planet: 'HomePlanet',
   oxigen: 0,
   rating: 0,
@@ -31,14 +31,14 @@ const heroSlice = createSlice({
     setPosition: (state, action: PayloadAction<{ x: number; y: number; z: number }>) => {
       state.position = action.payload;
     },
-    setRotation: (state, action: PayloadAction<{ x: number; y: number; z: number }>) => {
+    setRotation: (state, action: PayloadAction<{ x: number; y: number; z: number; w: number }>) => {
       state.rotation = action.payload;
     },
     setRobots: (state, action: PayloadAction<Robot[]>) => {
       state.robots = action.payload;
     },
     setRobotStatus: (state, action: PayloadAction<{ name: string; status: 'active' | 'repairing' | 'destroyed' }>) => {
-      const robot = state.robots.find(r => r.name === action.payload.name);
+      const robot = state.robots.find((r) => r.name === action.payload.name);
       if (robot) robot.status = action.payload.status;
     },
     // ...другие редьюсеры по необходимости

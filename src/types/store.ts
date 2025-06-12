@@ -31,6 +31,7 @@ export interface HeroState {
     x: number;
     y: number;
     z: number;
+    w: number;
   };
   planet: string;
   oxigen: number;
