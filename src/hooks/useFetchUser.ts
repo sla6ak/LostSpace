@@ -33,10 +33,9 @@ const useFetchUser = () => {
         registrationDate: user.registrationDate,
       })
     );
-    dispatch(setHero(hero));
+    dispatch(setHero(hero as any));
     toast.success(`Welcome ${user.nikName}`);
   }, [user, dispatch, skip, errorAuth, hero, errorHero]);
-
   return { user, hero };
 };
 

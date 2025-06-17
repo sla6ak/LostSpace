@@ -4,12 +4,11 @@ import React, { Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import Hero from '@/components/ThreeComponents/Hero';
 import { Debug, Physics } from '@react-three/rapier';
-import HomePlanet from '../../components/Planets/HomePlanet';
+import PlanetUniversal from '../../components/Planets/PlanetUniversal';
 import AuthRoute from '../../components/AuthRoute/AuthRoute';
 import WebSocketManager from '@/components/WebSocketManager/WebSocketManager';
 import LoadingOverlay from '@/components/LoadingOverlay/LoadingOverlay';
 import GameUI from '@/components/GameUI/GameUI';
-import CameraFollower from '@/components/ThreeComponents/CameraFollower';
 
 export default function Game() {
   return (
@@ -20,10 +19,9 @@ export default function Game() {
           <Suspense fallback={<LoadingOverlay />}>
             <Canvas>
               <Physics gravity={[0, 0, 0]} timeStep="vary">
-                {/* <Debug /> */}
-                <HomePlanet />
+                <Debug />
+                <PlanetUniversal />
                 <Hero />
-                <CameraFollower />
               </Physics>
             </Canvas>
           </Suspense>

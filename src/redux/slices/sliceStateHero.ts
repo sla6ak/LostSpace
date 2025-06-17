@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { HeroState, Robot } from '../../types/store';
+import { HeroState, Robot, validKeysHeroUpdate } from '../../types/store';
 
 const initialState: HeroState = {
   nickname: '',
@@ -25,8 +25,18 @@ const heroSlice = createSlice({
   name: 'hero',
   initialState,
   reducers: {
-    setHero: (state, action: PayloadAction<Partial<HeroState>>) => {
-      Object.assign(state, action.payload);
+    setHero: (state: any, action: any) => {
+      validKeysHeroUpdate.forEach((key: any) => {
+        if (action.payload[key] !== undefined) {
+          // Для вложенных объектов используем глубокое слияние вместо замены
+          if (typeof action.payload[key] === 'object' && !Array.isArray(action.payload[key])) {
+            state[key] = { ...state[key], ...action.payload[key] };
+          } else {
+            // Примитивы и массивы заменяем полностью
+            state[key] = action.payload[key] as any;
+          }
+        }
+      });
     },
     setPosition: (state, action: PayloadAction<{ x: number; y: number; z: number }>) => {
       state.position = action.payload;

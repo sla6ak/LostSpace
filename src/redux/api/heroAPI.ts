@@ -18,11 +18,11 @@ export const heroAPI = createApi({
   }),
   endpoints: (builder) => ({
     getHero: builder.query<HeroState, void>({
-      query: () => '/positions',
+      query: () => '/state',
     }),
     updateHero: builder.mutation<HeroState, Partial<HeroState>>({
       query: (body) => ({
-        url: '/position',
+        url: '/state',
         method: 'PUT',
         body,
       }),

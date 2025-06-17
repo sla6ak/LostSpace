@@ -1,16 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Client } from 'colyseus.js';
 import { toast } from 'react-toastify';
-
-interface WebSocketStatusState {
-  isConnected: boolean;
-  infoRoomId: string | null;
-  chatRoomId: string | null;
-  homePlanetRoomId: string | null;
-  planet2RoomId: string | null;
-  planet3RoomId: string | null;
-  error: string | null;
-}
+import { setPlanetRoomInstance } from '../middleware/heroPositionMiddleware';
+import { WebSocketStatusState } from '@/types/store';
+import { updatePlayersPlanet } from './sliceStatePlanets';
 
 const initialState: WebSocketStatusState = {
   isConnected: false,
@@ -216,6 +209,7 @@ export const connectToInfoRoom = (userId: string) => async (dispatch: any) => {
 export const connectToHomePlanetRoom = (userId: string) => async (dispatch: any) => {
   try {
     const room = await colyseusClient.joinOrCreate('homeplanet', { userId });
+    setPlanetRoomInstance(room);
     homePlanetReconnectAttempts = 0;
     dispatch(connectHomePlanetSuccess((room as any).id));
     // room.onMessage('*', (type: string | number, message: any) => {
@@ -223,6 +217,8 @@ export const connectToHomePlanetRoom = (userId: string) => async (dispatch: any)
     // });
     room.onMessage('planetPlayers', (players) => {
       // обновить локальный state всех игроков на планете
+      // console.log('planetPlayers', players);
+      dispatch(updatePlayersPlanet(players));
     });
     const reconnect = () => {
       if (homePlanetReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
@@ -261,6 +257,7 @@ export const connectToHomePlanetRoom = (userId: string) => async (dispatch: any)
 export const connectToPlanet2Room = (userId: string) => async (dispatch: any) => {
   try {
     const room = await colyseusClient.joinOrCreate('planet2', { userId });
+    setPlanetRoomInstance(room);
     planet2ReconnectAttempts = 0;
     dispatch(connectPlanet2Success((room as any).id));
     // room.onMessage('*', (type: string | number, message: any) => {
@@ -306,6 +303,7 @@ export const connectToPlanet2Room = (userId: string) => async (dispatch: any) =>
 export const connectToPlanet3Room = (userId: string) => async (dispatch: any) => {
   try {
     const room = await colyseusClient.joinOrCreate('planet3', { userId });
+    setPlanetRoomInstance(room);
     planet3ReconnectAttempts = 0;
     dispatch(connectPlanet3Success((room as any).id));
     // room.onMessage('*', (type: string | number, message: any) => {

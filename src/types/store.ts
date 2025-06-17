@@ -6,7 +6,11 @@ export interface RobotTechnology {
   bonusType: 'attack' | 'health' | 'defense';
   bonusValue: number;
 }
-
+export interface HeroPosit {
+  x: number;
+  y: number;
+  z: number;
+}
 // Тип одного робота
 export interface Robot {
   name: string;
@@ -38,10 +42,10 @@ export interface HeroState {
   rating: number;
   cristals: number;
   energy: number;
-  bonuses: string[];
-  disbonuses: string[];
-  qvests: string[];
-  items: string[];
+  bonuses: [];
+  disbonuses: [];
+  qvests: [];
+  items: [];
   robots: Robot[];
   specialization: string;
   data: string | null;
@@ -70,3 +74,30 @@ export interface WebSocketRoomsState {
   planet3Room: Room | null;
   error: string | null;
 }
+export interface WebSocketStatusState {
+  isConnected: boolean;
+  infoRoomId: string | null;
+  chatRoomId: string | null;
+  homePlanetRoomId: string | null;
+  planet2RoomId: string | null;
+  planet3RoomId: string | null;
+  error: string | null;
+}
+export const validKeysHeroUpdate = [
+  'position',
+  'rotation',
+  'nickname',
+  'planet',
+  'oxigen',
+  'rating',
+  'cristals',
+  'energy',
+  'bonuses',
+  'disbonuses',
+  'tehnologies',
+  'qvests',
+  'items',
+  'specialization',
+  'online',
+  'robots',
+];

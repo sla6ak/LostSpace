@@ -22,10 +22,7 @@ export default function AuthRoute({ children }: AuthRouteProps) {
     } else if (token.length < 9 && !user?.id) {
       router.push('/');
     }
-    // if (user && user?.nikName) {
-    //   console.log(`User loaded:`, user);
-    // }
-  }, [token, router, user]);
+  }, [token, router, user, hero]);
 
   return <>{children}</>;
 }

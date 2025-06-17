@@ -10,6 +10,7 @@ import {
   connectToInfoRoom,
 } from '@/redux/slices/sliceWebSocket';
 import LoadingOverlay from '../LoadingOverlay/LoadingOverlay';
+import { useGetHeroQuery } from '@/redux/api/heroAPI';
 
 interface WebSocketManagerProps {
   children: React.ReactNode;
@@ -17,24 +18,22 @@ interface WebSocketManagerProps {
 
 export default function WebSocketManager({ children }: WebSocketManagerProps) {
   const user = useSelector((state: RootState) => state.user);
-  const hero = useSelector((state: RootState) => state.heroSlice);
+  const heroSlice = useSelector((state: RootState) => state.heroSlice);
+  // будем контролировать изменения на сервере чтоб убедиться что мы онлаин
+  const { data: hero, error: errorHero } = useGetHeroQuery();
   const dispatch = useDispatch<AppDispatch>();
   const [isConnectedToInfoRoom, setIsConnectedToInfoRoom] = useState(false);
   const isConnected = useSelector((state: RootState) => state.webSocket.isConnected);
 
   useEffect(() => {
-    // console.log(user);
     if (!user?.id || isConnectedToInfoRoom) {
       console.warn('Не удалось подключиться к InfoRoom: отсутствует userId.');
       return;
     }
 
-    let isCancelled = false;
     const handleConnectToInfoRoom = async (id: string) => {
       try {
         await dispatch(connectToInfoRoom(id));
-
-        if (isCancelled) return;
         console.log('Успешно подключились к InfoRoom');
         setIsConnectedToInfoRoom(true);
       } catch (error) {
@@ -45,15 +44,13 @@ export default function WebSocketManager({ children }: WebSocketManagerProps) {
     handleConnectToInfoRoom(user.id!);
 
     return () => {
-      isCancelled = true;
-      console.log('Очистка useEffect: соединение с InfoRoom остается активным.');
+      // console.log('Очистка useEffect: соединение с InfoRoom остается активным.');
     };
   }, [user?.id, dispatch, isConnectedToInfoRoom]);
 
   useEffect(() => {
+    // console.log('Подключаемся к другим комнатам...', !hero?.online, !isConnectedToInfoRoom, !user?.id);
     if (!hero?.online || !isConnectedToInfoRoom || !user?.id) return;
-
-    // console.log('Подключаемся к другим комнатам...');
 
     if (hero.planet === 'HomePlanet') {
       dispatch(connectToHomePlanetRoom(user.id!));
@@ -62,7 +59,7 @@ export default function WebSocketManager({ children }: WebSocketManagerProps) {
     } else if (hero.planet === 'Planet3') {
       dispatch(connectToPlanet3Room(user.id!));
     }
-  }, [hero?.online, isConnectedToInfoRoom, hero.planet, user?.id, dispatch]);
+  }, [heroSlice.online, isConnectedToInfoRoom, heroSlice.planet, user.id, dispatch, hero?.online, hero?.planet]);
 
   if (!isConnected) {
     return (
