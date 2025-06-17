@@ -9,20 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@react-three/cannon": "^6.6.0",
-    "@react-three/drei": "^9.92.7",
-    "@react-three/fiber": "^8.15.12",
+    "@react-three/drei": "9.13.2",
+    "@dimforge/rapier3d": "0.11.2",
+    "@react-three/rapier": "0.12.0",
+    "@react-three/fiber": "^8.14.0",
     "@reduxjs/toolkit": "^1.9.5",
-    "@types/three": "^0.176.0",
+    "@types/three": "0.176.0",
     "colyseus.js": "^0.16.18",
-    "next": "^14.2.4",
+    "next": "13.5.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^8.1.2",
     "react-svg": "^16.1.21",
     "react-toastify": "^9.1.3",
     "redux-persist": "^6.0.0",
-    "three": "^0.160.0",
+    "three": "^0.156.1",
     "yup": "^1.2.0"
   },
   "devDependencies": {
@@ -37,5 +38,9 @@
     "prettier": "^2.8.8",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.3.3"
+  },
+  "resolutions": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   }
 }

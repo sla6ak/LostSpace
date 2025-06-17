@@ -1,7 +1,8 @@
 import React from 'react';
+import LoadingOverlay from '@/components/LoadingOverlay/LoadingOverlay';
 
-const loading = () => {
-  return <div>loading</div>;
+const Loading = () => {
+  return <LoadingOverlay />;
 };
 
-export default loading;
+export default Loading;

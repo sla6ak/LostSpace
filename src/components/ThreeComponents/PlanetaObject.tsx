@@ -1,7 +1,7 @@
-import React from 'react';
-import { useLoader, useFrame } from '@react-three/fiber';
-import { useSphere } from '@react-three/cannon';
-import { TextureLoader, RepeatWrapping, Mesh, Texture } from 'three';
+import React, { useMemo, useEffect } from 'react';
+import { useLoader } from '@react-three/fiber';
+import { RigidBody } from '@react-three/rapier';
+import { TextureLoader, RepeatWrapping, MeshStandardMaterial, SphereGeometry } from 'three';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 
@@ -10,43 +10,34 @@ interface PlanetaObjectProps {
 }
 
 const PlanetaObject: React.FC<PlanetaObjectProps> = ({ namePlanet }) => {
-  // Получаем данные о планете из редакса
   const planet = useSelector((state: RootState) => state.planetsSlice[namePlanet]);
+  // console.log('players', planet.players);
 
-  // Устанавливаем значения по умолчанию, если данных о планете нет
-  const texturePath = planet ? `/` + planet.BGTexture : '';
-  const radius = planet?.radius || 1;
+  const radius = useMemo(() => planet.radius - 0.01, [planet.radius]);
+  const texture = useLoader(TextureLoader, `/${planet.BGTexture}`);
+  useEffect(() => {
+    if (!texture) return;
+    texture.wrapS = texture.wrapT = RepeatWrapping;
+    texture.repeat.set(100, 100);
+    texture.anisotropy = 2;
+    texture.needsUpdate = true;
+  }, [texture]);
 
-  // Загружаем текстуру
-  const texture = useLoader(TextureLoader, texturePath) as Texture;
+  const geometry = useMemo(() => {
+    const geo = new SphereGeometry(radius, 32, 32);
+    geo.computeVertexNormals();
+    return geo;
+  }, [radius]);
 
-  // Статическая сфера в центре карты
-  const [ref] = useSphere<Mesh>(() => ({
-    type: 'Static',
-    position: [0, 0, 0],
-    args: [radius], // радиус планеты
-  }));
-
-  // Медленное вращение планеты (опционально)
-  useFrame(() => {
-    if (ref.current) {
-      ref.current.rotation.y += 0.0005;
-    }
-  });
-
-  // Если данных о планете нет, возвращаем null
+  const material = useMemo(() => new MeshStandardMaterial({ map: texture, roughness: 0.8, metalness: 0.2 }), [texture]);
   if (!planet) return null;
-
-  // Настройка текстуры (опционально, если нужна "бесконечная" текстура)
-  texture.wrapS = RepeatWrapping;
-  texture.wrapT = RepeatWrapping;
-  texture.repeat.set(1, 1);
-
   return (
-    <mesh ref={ref} position={[0, 0, 0]}>
-      <sphereGeometry args={[radius, 50, 50]} />
-      <meshStandardMaterial map={texture} />
-    </mesh>
+    <>
+      <ambientLight color="#beebee" intensity={planet.intensity} />
+      <RigidBody type="fixed" colliders="trimesh">
+        <mesh geometry={geometry} material={material} />
+      </RigidBody>
+    </>
   );
 };
 

@@ -1,0 +1,219 @@
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.chat-panel {
+  position: fixed;
+  left: 20px;
+  bottom: 90px;
+  width: 300px;
+  height: 400px;
+  max-width: 350px;
+  min-width: 260px;
+  min-height: 600px; /* Увеличена минимальная высота */
+  max-height: 900px; /* Увеличена максимальная высота */
+  background: rgba(30, 13, 10, 0.8); /* ещё более прозрачный фон */
+  border: 1px solid rgba(0, 150, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: all 0.3s ease;
+  animation: slideInLeft 0.3s ease forwards;
+}
+
+.chat-panel.open {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.chat-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px 8px 18px;
+  background: rgba(0, 0, 0, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(5px);
+}
+
+.chat-header h3 {
+  margin: 0;
+  color: rgba(0, 150, 255, 0.9);
+  font-size: 1.2em;
+}
+
+.chat-header button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 0 5px;
+  transition: color 0.2s;
+}
+
+.chat-header button:hover {
+  color: rgba(0, 150, 255, 0.9);
+}
+
+.chat-messages {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 10px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scroll-behavior: smooth;
+  height: calc(100% - 90px); /* Вычитаем высоту header и input */
+}
+
+/* Скрыть горизонтальный скролл */
+.chat-messages::-webkit-scrollbar {
+  height: 0 !important;
+}
+
+/* Стилизация вертикального скроллбара */
+.chat-messages::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.9);
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(0, 150, 255, 0.5);
+  border-radius: 4px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 150, 255, 0.7);
+}
+
+.message {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 150, 255, 0.3);
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin-bottom: 1px;
+  max-width: 90%;
+  display: inline-block;
+  box-sizing: border-box;
+  align-self: flex-start;
+  margin-left: 0;
+  margin-right: auto;
+  transition: all 0.3s ease;
+  word-break: break-word;
+  font-size: 0.78em;
+  font-weight: 300;
+}
+
+.message:hover {
+  background: rgba(0, 150, 255, 0.1);
+  border-color: rgba(0, 150, 255, 0.4);
+}
+
+.message.own {
+  background: rgba(0, 150, 255, 0.2);
+  border-color: rgba(0, 150, 255, 0.4);
+  /* убираем align-self: flex-end; чтобы не смещать к правому краю */
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 0.7em;
+}
+
+.sender {
+  color: rgba(0, 150, 255, 0.9);
+  font-weight: 400;
+  font-size: 0.78em;
+  margin-right: 4px;
+}
+
+.timestamp {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.68em;
+  opacity: 0.7;
+  margin-left: 8px;
+}
+
+.message-text {
+  color: rgba(255, 255, 255, 0.9);
+  word-break: break-word;
+  font-size: 0.78em;
+  font-weight: 300;
+}
+
+.chat-input {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 20, 30, 0.98);
+  box-sizing: border-box;
+  backdrop-filter: blur(5px);
+}
+
+.chat-input input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: inherit;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.chat-input input:focus {
+  border-color: rgba(0, 150, 255, 0.6);
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.chat-input button {
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 42px;
+  background: rgba(0, 150, 255, 0.2);
+  border: 1px solid rgba(0, 150, 255, 0.3);
+}
+
+.chat-input button:hover {
+  background: rgba(0, 150, 255, 0.3);
+  border-color: rgba(0, 150, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.send-icon {
+  width: 16px; /* Уменьшенный размер иконки */
+  height: 16px;
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%230af"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>');
+  background-size: contain;
+  background-repeat: no-repeat;
+}
