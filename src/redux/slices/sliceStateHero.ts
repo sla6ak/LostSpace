@@ -17,6 +17,7 @@ const initialState: HeroState = {
   robots: [],
   specialization: '',
   data: null,
+  inbattle: false,
   online: false,
   updatedAt: '',
 };

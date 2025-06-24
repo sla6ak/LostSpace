@@ -9,10 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@react-three/drei": "9.13.2",
     "@dimforge/rapier3d": "0.11.2",
-    "@react-three/rapier": "0.12.0",
+    "@react-three/drei": "9.13.2",
     "@react-three/fiber": "^8.14.0",
+    "@react-three/rapier": "0.12.0",
     "@reduxjs/toolkit": "^1.9.5",
     "@types/three": "0.176.0",
     "colyseus.js": "^0.16.18",
@@ -24,6 +24,7 @@
     "react-toastify": "^9.1.3",
     "redux-persist": "^6.0.0",
     "three": "^0.156.1",
+    "three-spritetext": "^1.9.6",
     "yup": "^1.2.0"
   },
   "devDependencies": {

@@ -1,5 +1,5 @@
 import React, { FC, useState, SetStateAction } from 'react';
-import { useRegistrationUserMutation } from '../../redux/api/authAPI';
+import { useRegistrationUserMutation } from '../../redux/api/API';
 import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
 import { newToken } from '../../redux/slices/sliceToken';

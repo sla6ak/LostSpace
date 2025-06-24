@@ -7,7 +7,7 @@ import PlanetaObject from '../ThreeComponents/PlanetaObject';
 import { useSelector } from 'react-redux';
 import { HeroPlayers } from '../ThreeComponents/HeroPlayers';
 
-export default function PlanetUniversal() {
+export default function PlanetUniversal(getModel: any) {
   const heroSlice = useSelector((state: { heroSlice: any }) => state.heroSlice);
   const namePlanet = heroSlice.planet || 'HomePlanet';
   const planetSettings = useSelector((state: { planetsSlice: any }) => state.planetsSlice[namePlanet]);

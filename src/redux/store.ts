@@ -1,8 +1,6 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import { persistStore, persistReducer } from 'redux-persist';
-import { authApi } from './api/authAPI';
-import { chatApi } from './api/chatAPI';
-import { heroAPI } from './api/heroAPI';
+import { api } from './api/API';
 import { currentToken } from './slices/sliceToken';
 import { planetsSlice } from './slices/sliceStatePlanets';
 import heroSlice from './slices/sliceStateHero';
@@ -36,14 +34,12 @@ const tokenPersistConfig = {
 };
 
 const rootReducer = combineReducers({
-  [authApi.reducerPath]: authApi.reducer,
-  [chatApi.reducerPath]: chatApi.reducer,
+  [api.reducerPath]: api.reducer,
   token: currentToken.reducer,
   planetsSlice: planetsSlice.reducer,
   heroSlice: heroSlice.reducer,
   webSocket: webSocketSlice.reducer,
   user: userSlice.reducer,
-  [heroAPI.reducerPath]: heroAPI.reducer,
 });
 
 const persistedReducer = persistReducer(tokenPersistConfig, rootReducer);
@@ -54,7 +50,7 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: false,
       immutableCheck: false,
-    }).concat(authApi.middleware, chatApi.middleware, heroAPI.middleware, heroPositionMiddleware),
+    }).concat(api.middleware, heroPositionMiddleware),
 });
 
 export const persistor = persistStore(store);

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
 import { connectToChatRoom, disconnectChatRoom } from '@/redux/slices/sliceWebSocket';
-import { useGetMessagesQuery, useSendMessageMutation } from '@/redux/api/chatAPI';
+import { useGetMessagesQuery, useSendMessageMutation } from '@/redux/api/API';
 import './ChatPanel.css';
 
 interface Message {

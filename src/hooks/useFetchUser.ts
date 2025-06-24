@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useIsActivTokenQuery } from '@/redux/api/authAPI';
+import { useIsActivTokenQuery, useGetHeroQuery } from '@/redux/api/API';
 import { setUser } from '@/redux/slices/sliceUser';
 import { setHero } from '@/redux/slices/sliceStateHero';
 import { toast } from 'react-toastify';
-import { useGetHeroQuery } from '@/redux/api/heroAPI';
 
 const useFetchUser = () => {
   const { token } = useSelector((state: any) => state);

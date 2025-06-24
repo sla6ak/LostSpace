@@ -7,16 +7,15 @@ import { useFrame } from '@react-three/fiber';
 import { Group, Vector3, Quaternion, Matrix4 } from 'three';
 import { useLordKeyboardControls } from '@/hooks/useLordKeyboardControls';
 import { setPosition, setRotation } from '@/redux/slices/sliceStateHero';
-import { useGLTF, useAnimations } from '@react-three/drei';
 import { useGravity } from '@/hooks/useGravity';
-import * as THREE from 'three';
 import CameraFollower from './CameraFollower';
 import { HeroPosit } from '@/types/store';
+import { HeroWalkingModel } from '../../3DModels/HeroWalkingModel';
 
 // Настройки движения
 const BASE_IMPULSE_STRENGTH = 20;
 const MAX_IMPULSE = 100; // Увеличим максимальный импульс
-const ROTATION_SPEED = 3;
+const ROTATION_SPEED = 5;
 const ALIGNMENT_SPEED = 5.0;
 const MIN_ROTATION_THRESHOLD = 0.01;
 const DISPATCH_INTERVAL = 0.5;
@@ -36,9 +35,8 @@ const _alignQuat = new Quaternion();
 const _basis = new Matrix4();
 const _moveForce = new Vector3();
 
-const Hero = React.forwardRef<Group>((props, ref) => {
+const Hero = React.forwardRef<Group, any>(({ getModel }: any, ref) => {
   const lastDispatchTime = useRef(0);
-  const model = useGLTF('/models/heroAnimations/walking.glb');
   const lastMoveTime = useRef(0);
   const velocityRef = useRef(new Vector3()); // Для отслеживания скорости
   // Состояния для управления анимациями
@@ -56,15 +54,6 @@ const Hero = React.forwardRef<Group>((props, ref) => {
   const [heroPosa, setHeroPosa] = useState<HeroPosit>({ x: 0, y: 0, z: 0 });
   const [heroRota, setHeroRota] = useState({ x: 0, y: 0, z: 0, w: 0 });
 
-  const filteredClips = useMemo(() => {
-    return model.animations.map((clip) => {
-      const tracks = clip.tracks.filter((t) => !t.name.endsWith('.position'));
-      return new THREE.AnimationClip(clip.name, clip.duration, tracks);
-    });
-  }, [model.animations]);
-
-  const { actions, names } = useAnimations(filteredClips, model.scene);
-
   const planetCenter = useMemo(
     () => new Vector3(planetSettings.center.x, planetSettings.center.y, planetSettings.center.z),
     [planetSettings.center.x, planetSettings.center.y, planetSettings.center.z]
@@ -78,23 +67,6 @@ const Hero = React.forwardRef<Group>((props, ref) => {
       lastMoveTime.current = performance.now();
     }
   }, [movement.moveForward, movement.moveBackward]);
-
-  // Управление анимациями
-  useEffect(() => {
-    const walkAction = actions['mixamo.com'] || (names[0] && actions[names[0]]);
-    if (!walkAction) return;
-
-    // Всегда держим анимацию активной, но регулируем скорость
-    if (!walkAction.isRunning()) {
-      walkAction.play().setEffectiveTimeScale(0.1);
-    }
-
-    if (isMoving) {
-      walkAction.setEffectiveTimeScale(1);
-    } else {
-      walkAction.setEffectiveTimeScale(0.1);
-    }
-  }, [isMoving, actions, names]);
 
   useFrame((state, delta) => {
     const safeDelta = Math.min(Math.max(delta, 0.001), 1 / 20);
@@ -216,18 +188,10 @@ const Hero = React.forwardRef<Group>((props, ref) => {
           heroPositionState.z,
         ]}
         type="dynamic"
-        {...props}
       >
         <BallCollider args={[1.2]} /> {/* Увеличим радиус коллайдера */}
         <group ref={modelGroup}>
-          {model ? (
-            <primitive object={model.scene} scale={[1, 1, 1]} />
-          ) : (
-            <mesh>
-              <boxGeometry args={[2, 2, 2]} />
-              <meshStandardMaterial color="red" />
-            </mesh>
-          )}
+          <HeroWalkingModel isMoving={isMoving} />
         </group>
       </RigidBody>
     </Suspense>

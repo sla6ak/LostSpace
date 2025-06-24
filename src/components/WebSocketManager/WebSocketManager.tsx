@@ -10,7 +10,7 @@ import {
   connectToInfoRoom,
 } from '@/redux/slices/sliceWebSocket';
 import LoadingOverlay from '../LoadingOverlay/LoadingOverlay';
-import { useGetHeroQuery } from '@/redux/api/heroAPI';
+import { useGetHeroQuery } from '@/redux/api/API';
 
 interface WebSocketManagerProps {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ export default function WebSocketManager({ children }: WebSocketManagerProps) {
   const user = useSelector((state: RootState) => state.user);
   const heroSlice = useSelector((state: RootState) => state.heroSlice);
   // будем контролировать изменения на сервере чтоб убедиться что мы онлаин
-  const { data: hero, error: errorHero } = useGetHeroQuery();
+  const { data: hero, error: errorHero } = useGetHeroQuery(undefined);
   const dispatch = useDispatch<AppDispatch>();
   const [isConnectedToInfoRoom, setIsConnectedToInfoRoom] = useState(false);
   const isConnected = useSelector((state: RootState) => state.webSocket.isConnected);

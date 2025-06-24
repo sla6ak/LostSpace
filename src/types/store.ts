@@ -37,6 +37,7 @@ export interface HeroState {
     z: number;
     w: number;
   };
+  inbattle: boolean;
   planet: string;
   oxigen: number;
   rating: number;
